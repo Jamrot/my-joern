@@ -26,7 +26,8 @@ object ReachingDefProblem {
     val init      = new ReachingDefInit(transfer.gen)
     def meet: (mutable.BitSet, mutable.BitSet) => mutable.BitSet =
       (x: mutable.BitSet, y: mutable.BitSet) => { x.union(y) }
-
+    // jamrot's log: print init
+    // println(s"[ReachingDefProblem] Init: ${init.initOut}")
     new DataFlowProblem[StoredNode, mutable.BitSet](flowGraph, transfer, meet, init, true, mutable.BitSet())
   }
 
@@ -189,9 +190,12 @@ class ReachingDefTransferFunction(flowGraph: ReachingDefFlowGraph)
     // taint unharmed.
 
     val defsForCalls = method.call
-      .filterNot(x => isFieldAccess(x.name))
+      .filterNot(x => isFieldAccess(x.name)) // jamrot's modify'
       .l
       .map { call =>
+        // if (isFieldAccess(call.name)) { 
+        //   println(s"[Field Access Call] Field access call: ${call.name}") // jamrot's log
+        // } 
         call -> {
           val retVal = List(call)
           val args = call.argument
@@ -247,7 +251,7 @@ class ReachingDefTransferFunction(flowGraph: ReachingDefFlowGraph)
     // taint unharmed.
 
     method.call
-      .filterNot(x => isGenericMemberAccessName(x.name))
+      .filterNot(x => isGenericMemberAccessName(x.name)) //jamrot's modify
       .map { call =>
         call -> killsForGens(gen(call), allIdentifiers, allCalls)
       }
@@ -310,9 +314,19 @@ class ReachingDefTransferFunction(flowGraph: ReachingDefFlowGraph)
 class OptimizedReachingDefTransferFunction(flowGraph: ReachingDefFlowGraph)
     extends ReachingDefTransferFunction(flowGraph) {
 
+  // get identifiers that appear only once
   lazy val loneIdentifiers: Map[Call, List[Definition]] = {
+    // 获取returns中的identifier，获取函数参数、局部变量名称
     val identifiersInReturns = method._returnViaContainsOut.ast.isIdentifier.name.l
-    val paramAndLocalNames   = method.parameter.name.l ++ method.local.name.l
+    val paramAndLocalNames = method.parameter.name.l ++ method.local.name.l
+
+    // jamrot's log
+    // if (identifiersInReturns.nonEmpty)
+    //   println(s"[ReachingDefProblem] Identifiers in Returns: $identifiersInReturns")
+    // if (paramAndLocalNames.nonEmpty)
+    //   println(s"[ReachingDefProblem] Parameters and Locals: $paramAndLocalNames")
+      
+    // filter identifiersInReturns and paramAndLocalNames
     val callArgPairs = method.call.flatMap { call =>
       call.argument.isIdentifier
         .filterNot(i => paramAndLocalNames.contains(i.name))
@@ -320,6 +334,7 @@ class OptimizedReachingDefTransferFunction(flowGraph: ReachingDefFlowGraph)
         .map(arg => (arg.name, call, arg))
     }.l
 
+    // remain identifiers that appear only once
     callArgPairs
       .groupBy(_._1)
       .collect { case (_, v) if v.size == 1 => v.map { case (_, call, arg) => (call, arg) }.head }
@@ -328,14 +343,23 @@ class OptimizedReachingDefTransferFunction(flowGraph: ReachingDefFlowGraph)
       .map { case (k, v) =>
         (
           k,
+          // filter out identifiers that are not in the flow graph
           v.filter(x => flowGraph.nodeToNumber.contains(x._2))
             .map(x => Definition.fromNode(x._2, flowGraph.nodeToNumber))
         )
       }
   }
+  // if (loneIdentifiers.nonEmpty)
+    // println(s"[ReachingDefProblem] Lone Identifiers: $loneIdentifiers")
 
-  override def initGen(method: Method): Map[StoredNode, mutable.BitSet] =
-    withoutLoneIdentifiers(super.initGen(method))
+  override def initGen(method: Method): Map[StoredNode, mutable.BitSet] = {
+    val initialGen = super.initGen(method)
+    // println(s"Initial gen for method ${method.fullName}") // jamrot's log
+    val result = withoutLoneIdentifiers(initialGen)
+    // if (result.nonEmpty)
+      // println(s"[ReachingDefProblem] Gen without lone identifiers: $result") // jamrot's log
+    result
+  }
 
   private def withoutLoneIdentifiers(g: Map[StoredNode, mutable.BitSet]): Map[StoredNode, mutable.BitSet] = {
     g.map { case (k, defs) =>

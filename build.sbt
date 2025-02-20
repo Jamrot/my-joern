@@ -23,6 +23,7 @@ lazy val rubysrc2cpg       = Projects.rubysrc2cpg
 lazy val gosrc2cpg         = Projects.gosrc2cpg
 lazy val swiftsrc2cpg      = Projects.swiftsrc2cpg
 lazy val csharpsrc2cpg     = Projects.csharpsrc2cpg
+lazy val llvm2cpg          = Projects.llvm2cpg
 
 ThisBuild / libraryDependencies ++= Seq(
   "org.slf4j"                % "slf4j-api"         % Versions.slf4j,

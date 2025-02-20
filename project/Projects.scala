@@ -23,5 +23,6 @@ object Projects {
   lazy val rubysrc2cpg   = project.in(frontendsRoot / "rubysrc2cpg")
   lazy val gosrc2cpg     = project.in(frontendsRoot / "gosrc2cpg")
   lazy val csharpsrc2cpg = project.in(frontendsRoot / "csharpsrc2cpg")
+  lazy val llvm2cpg      = project.in(frontendsRoot / "llvm2cpg")
 
 }

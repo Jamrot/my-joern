@@ -11,6 +11,7 @@ import scala.util.Try
 case class CCpgGenerator(config: FrontendConfig, rootPath: Path) extends CpgGenerator {
   private lazy val command: Path = if (isWin) rootPath.resolve("c2cpg.bat") else rootPath.resolve("c2cpg.sh")
 
+  println("CCpgGenerator: " + command.toString)
   /** Generate a CPG for the given input path. Returns the output path, or None, if no CPG was generated.
     */
   override def generate(inputPath: String, outputPath: String = "cpg.bin"): Try[String] = {

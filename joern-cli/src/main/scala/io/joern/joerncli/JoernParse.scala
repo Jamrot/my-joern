@@ -17,6 +17,7 @@ object JoernParse {
   var generator: CpgGenerator = scala.compiletime.uninitialized
 
   def main(args: Array[String]): Unit = {
+    // execute run method and print the result
     run(args) match {
       case Success(msg) =>
         println(msg)
@@ -69,7 +70,10 @@ object JoernParse {
 
   private def run(args: Array[String]): Try[String] = {
     val (parserArgs, frontendArgs) = CpgBasedTool.splitArgs(args)
-    val installConfig              = new InstallConfig()
+    val installConfig                           = new InstallConfig()
+    // output parserArgs and frontendArgs
+    println(s"parserArgs: ${parserArgs.mkString(",")}")
+    println(s"frontendArgs: ${frontendArgs.mkString(",")}")
 
     parseConfig(parserArgs).flatMap { config =>
       if (config.listLanguages)
@@ -85,11 +89,11 @@ object JoernParse {
     installConfig: InstallConfig = InstallConfig()
   ): Try[String] = {
     for {
-      _        <- checkInputPath(config)
-      language <- getLanguage(config)
-      _        <- generateCpg(installConfig, frontendArgs, config, language)
-      _        <- applyDefaultOverlays(config)
-    } yield newCpgCreatedString(config.outputCpgFile)
+      _        <- checkInputPath(config) // 检查输入路径是否为空或存在
+      language <- getLanguage(config) // 获取源代码的语言
+      _        <- generateCpg(installConfig, frontendArgs, config, language) // 生成代码属性图
+      _        <- applyDefaultOverlays(config) // 应用默认的覆盖层
+    } yield newCpgCreatedString(config.outputCpgFile) // 返回生成的代码属性图的文件名
   }
 
   private def checkInputPath(config: ParserConfig): Try[Unit] = {
@@ -162,6 +166,7 @@ object JoernParse {
       println("[+] Applying default overlays")
       if (config.enhance) {
         val cpg = DefaultOverlays.create(config.outputCpgFile, config.maxNumDef)
+        println("applying post processing passes")
         generator.applyPostProcessingPasses(cpg)
         cpg.close()
       }

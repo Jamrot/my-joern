@@ -18,6 +18,7 @@ object DataFlowSlicing {
   private val logger                   = LoggerFactory.getLogger(getClass)
 
   def calculateDataFlowSlice(cpg: Cpg, config: DataFlowConfig): Option[DataFlowSlice] = {
+    println("Calculating data flow slice")
     implicit val implicitConfig: DataFlowConfig = config
 
     val tasks = (config.fileFilter match {
